@@ -78,8 +78,8 @@ func (dp *DataParser) SetStrict(level int) {
 	dp.strict = level
 }
 
-func (dp *DataParser) SetFormatDir(path string) {
-	dp.formatSource = os.DirFS(path)
+func (dp *DataParser) SetFormatDir(source fs.FS) {
+	dp.formatSource = source
 }
 
 func (p *DataParser) getFormat(filename string) (DataFormat, error) {
