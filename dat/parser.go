@@ -2,7 +2,6 @@ package dat
 
 import (
 	"bytes"
-	"embed"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -48,23 +47,9 @@ type dataState struct {
 	seenOffsets map[int]bool
 }
 
-//go:embed formats/*.json
-var rawEmbeddedFormats embed.FS
-
-var embeddedFormats fs.FS
-
-func init() {
-	// we embedded formats/*.json, but we actually just want *.json
-	subfs, err := fs.Sub(rawEmbeddedFormats, "formats")
-	if err != nil {
-		panic(err)
-	}
-	embeddedFormats = subfs
-}
-
-func InitParser(version string) *DataParser {
+func InitParser(version string, source fs.FS) *DataParser {
 	return &DataParser{
-		formatSource: embeddedFormats,
+		formatSource: source,
 		formats:      make(map[string]DataFormat),
 		version:      version,
 	}

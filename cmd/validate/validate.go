@@ -13,6 +13,7 @@ import (
 
 	"github.com/oriath-net/pogo/cmd"
 	"github.com/oriath-net/pogo/dat"
+	"github.com/oriath-net/pogo/formats"
 	"github.com/oriath-net/pogo/poefs"
 	"github.com/spf13/pflag"
 )
