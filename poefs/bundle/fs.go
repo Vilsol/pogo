@@ -45,12 +45,14 @@ func (b *bundleFS) Open(name string) (fs.File, error) {
 		}, nil
 	}
 
+	lowerName := strings.ToLower(name)
+
 	// binary search for the file
 	idx := sort.Search(len(b.index.files), func(i int) bool {
-		return files[i].path >= name
+		return files[i].path >= lowerName
 	})
 
-	if idx < len(files) && files[idx].path == name {
+	if idx < len(files) && files[idx].path == lowerName {
 		return &bundleFsFile{
 			fs:   b,
 			info: &files[idx],
@@ -60,7 +62,7 @@ func (b *bundleFS) Open(name string) (fs.File, error) {
 	// check for a directory separately -- it's possible for a file to have a
 	// prefix which masks the directory, e.g. Abc/Def.txt and Abc/Def/Ghi.txt,
 	// searching for Abc/Def will return the file first
-	dirName := name + "/"
+	dirName := lowerName + "/"
 	idx += sort.Search(len(b.index.files)-idx, func(i int) bool {
 		return files[idx+i].path >= dirName
 	})
@@ -76,7 +78,7 @@ func (b *bundleFS) Open(name string) (fs.File, error) {
 	// nope, nothing here
 	return nil, &fs.PathError{
 		Op:   "open",
-		Path: name,
+		Path: lowerName,
 		Err:  fs.ErrNotExist,
 	}
 }

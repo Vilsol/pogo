@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"hash/fnv"
+	"github.com/nfisher/gstream/hash/murmur2"
 	"io"
 	"sort"
-	"strings"
 )
 
 type bundleIndex struct {
@@ -80,9 +79,14 @@ func loadBundleIndex(indexFile io.ReaderAt) (bundleIndex, error) {
 	pathrepCount := binary.LittleEndian.Uint32(indexData[p:])
 	p += 4
 
+	var seed uint64
 	pathmap := make(map[uint64]bundlePathrep, pathrepCount)
 	for i := uint32(0); i < pathrepCount; i++ {
 		hash := binary.LittleEndian.Uint64(indexData[p+0:])
+		if i == 0 {
+			a := (hash ^ (hash >> 47)) * 0x5F7A0EA7E59B19BD
+			seed = a ^ (a >> 47)
+		}
 		pr := bundlePathrep{
 			offset:        binary.LittleEndian.Uint32(indexData[p+8:]),
 			size:          binary.LittleEndian.Uint32(indexData[p+12:]),
@@ -109,9 +113,7 @@ func loadBundleIndex(indexFile io.ReaderAt) (bundleIndex, error) {
 		data := pathData[pr.offset : pr.offset+pr.size]
 		paths := readPathspec(data)
 		for _, path := range paths {
-			h := fnv.New64a()
-			h.Write([]byte(strings.ToLower(path) + "++"))
-			sum := h.Sum64()
+			sum := murmur2.Hash([]byte(path), seed)
 			if fe, found := filemap[sum]; found {
 				files[fe].path = path
 			} else {
