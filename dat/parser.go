@@ -128,6 +128,10 @@ func (p *DataParser) Parse(r io.Reader, filename string) ([]any, error) {
 	rowCount := int(rowCount32)
 
 	rowSize := df.Size()
+
+	boundary := bytes.Index(dat, []byte(notTheBs))
+	rowSize = (boundary - 4) / rowCount
+
 	dynOffset := 4 + rowCount*rowSize
 
 	if int(dynOffset) > len(dat) {
