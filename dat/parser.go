@@ -3,6 +3,7 @@ package dat
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -127,6 +128,11 @@ func (p *DataParser) Parse(r io.Reader, filename string) ([]any, error) {
 	}
 	rowCount := int(rowCount32)
 
+	if rowCount <= 0 {
+		log.Printf("file: %s is empty: 0 rows found", filename)
+		return nil, nil
+	}
+
 	rowSize := df.Size()
 
 	boundary := bytes.Index(dat, []byte(notTheBs))
@@ -223,7 +229,7 @@ func (ds *dataState) readRow(id int) (any, error) {
 			ds.dynData,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("error reading field %s of row %d: %w", field.Name, id, err)
+			// log.Printf("%s", fmt.Errorf("error reading field [%d] %s of row %d: %w", i, field.Name, id, err))
 		}
 	}
 
@@ -241,7 +247,7 @@ func (ds *dataState) readField(tgt reflect.Value, typ FieldType, rowdat []byte, 
 		return nil
 
 	case TypeUint8, TypeUint16, TypeUint32, TypeUint64,
-		TypeInt32, TypeInt64,
+		TypeInt16, TypeInt32, TypeInt64,
 		TypeFloat32, TypeFloat64:
 		return binary.Read(bytes.NewReader(rowdat), binary.LittleEndian, tgt.Addr().Interface())
 
@@ -366,6 +372,10 @@ func (ds *dataState) readField(tgt reflect.Value, typ FieldType, rowdat []byte, 
 }
 
 func (ds *dataState) rawReadArray(tgt reflect.Value, rowdat []byte, dyndat []byte) (int, int, int, error) {
+	if len(rowdat) < 16 {
+		return 0, 0, 0, errors.New("not enough data")
+	}
+
 	var offset, count int64
 	if ds.rowFormat.width.is64Bit() {
 		count = int64(binary.LittleEndian.Uint64(rowdat[0:]))

@@ -14,7 +14,7 @@ import (
 
 var errBadPath = errors.New("invalid source path")
 
-func Open(p string) (fs.FS, error) {
+func Open(p string, newHashFunc bool) (fs.FS, error) {
 	fi, err := os.Stat(p)
 	if err != nil {
 		return nil, err
@@ -23,7 +23,7 @@ func Open(p string) (fs.FS, error) {
 	if fi.IsDir() {
 		dirfs := os.DirFS(p)
 
-		bundles, err := bundle.NewLoader(dirfs)
+		bundles, err := bundle.NewLoader(dirfs, newHashFunc)
 		if err != nil {
 			return nil, err
 		}
@@ -47,7 +47,7 @@ func Open(p string) (fs.FS, error) {
 			return ggfs, nil
 		}
 
-		bundles, err := bundle.NewLoader(ggfs)
+		bundles, err := bundle.NewLoader(ggfs, newHashFunc)
 		if err != nil {
 			return nil, err
 		}
@@ -87,14 +87,14 @@ func SplitPath(p string) (string, string) {
 	return srcPath, localPath
 }
 
-func OpenFile(unipath string) (fs.File, error) {
+func OpenFile(unipath string, newHashFunc bool) (fs.File, error) {
 	srcPath, localPath := SplitPath(unipath)
 
 	if srcPath == "" {
 		return os.Open(localPath)
 	}
 
-	src, err := Open(srcPath)
+	src, err := Open(srcPath, newHashFunc)
 	if err != nil {
 		return nil, err
 	}

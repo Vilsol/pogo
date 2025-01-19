@@ -34,7 +34,7 @@ func init() {
 		Action: func(args []string) {
 			srcPath, localPath := poefs.SplitPath(args[0])
 
-			srcFs, err := poefs.Open(srcPath)
+			srcFs, err := poefs.Open(srcPath, false)
 			if err != nil {
 				log.Fatalf("Unable to open %s: %s", srcPath, err)
 			}

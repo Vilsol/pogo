@@ -11,6 +11,7 @@ const (
 	TypeUint16                = "u16"
 	TypeUint32                = "u32"
 	TypeUint64                = "u64"
+	TypeInt16                 = "i16"
 	TypeInt32                 = "i32"
 	TypeInt64                 = "i64"
 	TypeFloat32               = "f32"
@@ -38,6 +39,7 @@ func (ft FieldType) Valid() bool {
 	switch ft {
 	case TypeUint8, TypeUint16,
 		TypeUint32, TypeUint64,
+		TypeInt16,
 		TypeInt32, TypeInt64,
 		TypeFloat32, TypeFloat64,
 		TypeBool, TypeString,
@@ -59,7 +61,7 @@ func (ft FieldType) Size(w parserWidth) int {
 	switch ft {
 	case TypeUint8:
 		return 1
-	case TypeUint16:
+	case TypeInt16, TypeUint16:
 		return 2
 	case TypeInt32, TypeUint32:
 		return 4
@@ -110,6 +112,8 @@ func (ft FieldType) reflectType() reflect.Type {
 		return reflect.TypeOf(uint32(0))
 	case TypeUint64:
 		return reflect.TypeOf(uint64(0))
+	case TypeInt16:
+		return reflect.TypeOf(int16(0))
 	case TypeInt32:
 		return reflect.TypeOf(int32(0))
 	case TypeInt64:

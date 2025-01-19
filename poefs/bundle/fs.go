@@ -15,14 +15,14 @@ type bundleFS struct {
 	index bundleIndex
 }
 
-func NewLoader(lower fs.FS) (*bundleFS, error) {
+func NewLoader(lower fs.FS, newHashFunc bool) (*bundleFS, error) {
 	indexFile, err := lower.Open("Bundles2/_.index.bin")
 	if err != nil {
 		return nil, err
 	}
 
 	// FIXME: It'd be neat to defer this until it's needed.
-	idx, err := loadBundleIndex(indexFile.(io.ReaderAt))
+	idx, err := loadBundleIndex(indexFile.(io.ReaderAt), newHashFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -45,14 +45,12 @@ func (b *bundleFS) Open(name string) (fs.File, error) {
 		}, nil
 	}
 
-	lowerName := strings.ToLower(name)
-
 	// binary search for the file
 	idx := sort.Search(len(b.index.files), func(i int) bool {
-		return files[i].path >= lowerName
+		return files[i].path >= name
 	})
 
-	if idx < len(files) && files[idx].path == lowerName {
+	if idx < len(files) && files[idx].path == name {
 		return &bundleFsFile{
 			fs:   b,
 			info: &files[idx],
@@ -62,7 +60,7 @@ func (b *bundleFS) Open(name string) (fs.File, error) {
 	// check for a directory separately -- it's possible for a file to have a
 	// prefix which masks the directory, e.g. Abc/Def.txt and Abc/Def/Ghi.txt,
 	// searching for Abc/Def will return the file first
-	dirName := lowerName + "/"
+	dirName := name + "/"
 	idx += sort.Search(len(b.index.files)-idx, func(i int) bool {
 		return files[idx+i].path >= dirName
 	})
@@ -78,7 +76,7 @@ func (b *bundleFS) Open(name string) (fs.File, error) {
 	// nope, nothing here
 	return nil, &fs.PathError{
 		Op:   "open",
-		Path: lowerName,
+		Path: name,
 		Err:  fs.ErrNotExist,
 	}
 }

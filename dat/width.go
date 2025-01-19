@@ -9,6 +9,7 @@ type parserWidth int
 const (
 	Dat32 parserWidth = iota
 	Dat64
+	Datc64
 	Datl32
 	Datl64
 )
@@ -19,6 +20,8 @@ func widthForFilename(filename string) parserWidth {
 		return Dat32
 	case ".dat64":
 		return Dat64
+	case ".datc64":
+		return Datc64
 	case ".datl":
 		return Datl32
 	case ".datl64":
@@ -34,6 +37,8 @@ func (w parserWidth) String() string {
 		return "32-bit with UTF-16 strings"
 	case Dat64:
 		return "64-bit with UTF-16 strings"
+	case Datc64:
+		return "64-bit with UTF-16 strings"
 	case Datl32:
 		return "32-bit with UTF-32 strings"
 	case Datl64:
@@ -44,7 +49,7 @@ func (w parserWidth) String() string {
 }
 
 func (w parserWidth) is64Bit() bool {
-	return (w == Dat64) || (w == Datl64)
+	return (w == Dat64) || (w == Datl64) || (w == Datc64)
 }
 
 func (w parserWidth) isUTF32() bool {

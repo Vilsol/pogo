@@ -52,7 +52,7 @@ func (jfmt JsonFormat) BuildType(dp *DataParser) (DataFormat, error) {
 			Type: FieldType(jf.Type),
 		}
 		if !df.Type.Valid() {
-			return DataFormat{}, fmt.Errorf("Invalid type in field \"%s\"", jf.Name)
+			return DataFormat{}, fmt.Errorf("Invalid type in field \"%s\" (%s)", jf.Name, df.Type)
 		}
 
 		if jf.Since != "" && version.CompareSimple(jf.Since, dp.version) > 0 {

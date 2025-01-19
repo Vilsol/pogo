@@ -4,9 +4,13 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/nfisher/gstream/hash/murmur2"
+	"hash/fnv"
 	"io"
+	"log/slog"
 	"sort"
+	"strings"
+
+	"github.com/nfisher/gstream/hash/murmur2"
 )
 
 type bundleIndex struct {
@@ -27,7 +31,7 @@ type bundlePathrep struct {
 	recursiveSize uint32
 }
 
-func loadBundleIndex(indexFile io.ReaderAt) (bundleIndex, error) {
+func loadBundleIndex(indexFile io.ReaderAt, newHashFunc bool) (bundleIndex, error) {
 	indexBundle, err := openBundle(indexFile)
 	if err != nil {
 		return bundleIndex{}, fmt.Errorf("unable to load index bundle: %w", err)
@@ -109,15 +113,30 @@ func loadBundleIndex(indexFile io.ReaderAt) (bundleIndex, error) {
 		return bundleIndex{}, fmt.Errorf("unable to read pathrep bundle: %w", err)
 	}
 
+	hashFuncOld := func(path string) uint64 {
+		h := fnv.New64a()
+		h.Write([]byte(strings.ToLower(path) + "++"))
+		return h.Sum64()
+	}
+
+	hashFuncNew := func(path string) uint64 {
+		return murmur2.Hash([]byte(path), seed)
+	}
+
+	hashFunc := hashFuncOld
+	if newHashFunc {
+		hashFunc = hashFuncNew
+	}
+
 	for _, pr := range pathmap {
 		data := pathData[pr.offset : pr.offset+pr.size]
 		paths := readPathspec(data)
 		for _, path := range paths {
-			sum := murmur2.Hash([]byte(path), seed)
+			sum := hashFunc(path)
 			if fe, found := filemap[sum]; found {
 				files[fe].path = path
 			} else {
-				panic("unable to map bundle path to file")
+				slog.Warn("unable to map bundle path to file", slog.String("path", path), slog.Uint64("sum", sum))
 			}
 		}
 	}
